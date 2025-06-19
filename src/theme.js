@@ -1,7 +1,7 @@
 import { createContext, useState, useMemo } from "react";
 import { createTheme } from "@mui/material/styles";
 
-// Color design tokens generator based on mode (dark/light)
+// color design tokens export
 export const tokens = (mode) => ({
   ...(mode === "dark"
     ? {
@@ -60,9 +60,41 @@ export const tokens = (mode) => ({
           800: "#2a2d64",
           900: "#151632",
         },
+        yellowAccent: {
+          100: "#fff8e1",
+          200: "#ffecb3",
+          300: "#ffe082",
+          400: "#ffd54f",
+          500: "#ffca28",
+          600: "#ffb300",
+          700: "#ffa000",
+          800: "#ff8f00",
+          900: "#ff6f00",
+        },
+        orangeAccent: {
+          100: "#ffe0b2",
+          200: "#ffcc80",
+          300: "#ffb74d",
+          400: "#ffa726",
+          500: "#ff9800",
+          600: "#fb8c00",
+          700: "#f57c00",
+          800: "#ef6c00",
+          900: "#e65100",
+        },
+        purpleAccent: {
+          100: "#e1bee7",
+          200: "#ce93d8",
+          300: "#ba68c8",
+          400: "#ab47bc",
+          500: "#9c27b0",
+          600: "#8e24aa",
+          700: "#7b1fa2",
+          800: "#6a1b9a",
+          900: "#4a148c",
+        },
       }
     : {
-        // light mode colors (inverted or adjusted)
         grey: {
           100: "#141414",
           200: "#292929",
@@ -78,8 +110,8 @@ export const tokens = (mode) => ({
           100: "#040509",
           200: "#080b12",
           300: "#0c101b",
-          400: "#f2f0f0", // manually changed for light background
-          500: "#141b2d",
+          400: "#f2f0f0", // manually changed
+          500: "#f5f5f5",
           600: "#1F2A40",
           700: "#727681",
           800: "#a1a4ab",
@@ -118,17 +150,51 @@ export const tokens = (mode) => ({
           800: "#c3c6fd",
           900: "#e1e2fe",
         },
+        yellowAccent: {
+          100: "#fff8e1",
+          200: "#ffecb3",
+          300: "#ffe082",
+          400: "#ffd54f",
+          500: "#ffca28",
+          600: "#ffb300",
+          700: "#ffa000",
+          800: "#ff8f00",
+          900: "#ff6f00",
+        },
+        orangeAccent: {
+          100: "#ffe0b2",
+          200: "#ffcc80",
+          300: "#ffb74d",
+          400: "#ffa726",
+          500: "#ff9800",
+          600: "#fb8c00",
+          700: "#f57c00",
+          800: "#ef6c00",
+          900: "#e65100",
+        },
+        purpleAccent: {
+          100: "#e1bee7",
+          200: "#ce93d8",
+          300: "#ba68c8",
+          400: "#ab47bc",
+          500: "#9c27b0",
+          600: "#8e24aa",
+          700: "#7b1fa2",
+          800: "#6a1b9a",
+          900: "#4a148c",
+        },
       }),
 });
 
-// MUI theme settings using the tokens
+// mui theme settings
 export const themeSettings = (mode) => {
   const colors = tokens(mode);
   return {
     palette: {
-      mode,
+      mode: mode,
       ...(mode === "dark"
         ? {
+            // palette values for dark mode
             primary: {
               main: colors.primary[500],
             },
@@ -145,6 +211,7 @@ export const themeSettings = (mode) => {
             },
           }
         : {
+            // palette values for light mode
             primary: {
               main: colors.primary[100],
             },
@@ -192,26 +259,22 @@ export const themeSettings = (mode) => {
   };
 };
 
-// Context for color mode toggle
+// context for color mode
 export const ColorModeContext = createContext({
   toggleColorMode: () => {},
 });
 
-// Custom hook to manage mode and theme
 export const useMode = () => {
   const [mode, setMode] = useState("dark");
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () =>
-        setMode((prevMode) => (prevMode === "light" ? "dark" : "light")),
+        setMode((prev) => (prev === "light" ? "dark" : "light")),
     }),
     []
   );
 
-  // Create MUI theme based on current mode
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
-
-  // Return both theme and colorMode object (toggle function)
   return [theme, colorMode];
 };

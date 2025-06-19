@@ -1,131 +1,75 @@
 import { useState, useEffect } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
-
+import { Routes, Route } from "react-router-dom";
 import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
-
 import Dashboard from "./scenes/dashboard";
-import Team from "./scenes/team";
-import Invoices from "./scenes/invoices";
-import Contacts from "./scenes/contacts";
+import Team from "./scenes/fraud history";
 import Bar from "./scenes/bar";
-import Form from "./scenes/form";
-import Line from "./scenes/line";
-import Pie from "./scenes/pie";
 import FAQ from "./scenes/faq";
-import Geography from "./scenes/geography";
-import Calendar from "./scenes/calendar";
-
-import { CssBaseline, ThemeProvider } from "@mui/material";
+import { CssBaseline, ThemeProvider, Box } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
+import { AnimatePresence, motion } from "framer-motion";
 
 function App() {
   const [theme, colorMode] = useMode();
   const [isSidebar, setIsSidebar] = useState(true);
-  const navigate = useNavigate();
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
-  // Voice Command Setup
+  // Set data-theme attribute for CSS selectors
   useEffect(() => {
-    if (!("webkitSpeechRecognition" in window)) {
-      console.warn("Speech Recognition not supported in this browser.");
-      return;
-    }
-
-    const recognition = new window.webkitSpeechRecognition();
-    recognition.continuous = true;
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-
-    recognition.onresult = (event) => {
-      const transcript = event.results[event.results.length - 1][0].transcript
-        .trim()
-        .toLowerCase();
-
-      console.log("Voice command detected:", transcript);
-
-      // Map commands to routes
-      if (transcript.includes("dashboard")) {
-        navigate("/");
-        maybeCloseSidebar();
-      } else if (transcript.includes("team")) {
-        navigate("/team");
-        maybeCloseSidebar();
-      } else if (transcript.includes("contacts")) {
-        navigate("/contacts");
-        maybeCloseSidebar();
-      } else if (transcript.includes("invoices")) {
-        navigate("/invoices");
-        maybeCloseSidebar();
-      } else if (transcript.includes("form")) {
-        navigate("/form");
-        maybeCloseSidebar();
-      } else if (transcript.includes("bar")) {
-        navigate("/bar");
-        maybeCloseSidebar();
-      } else if (transcript.includes("pie")) {
-        navigate("/pie");
-        maybeCloseSidebar();
-      } else if (transcript.includes("line")) {
-        navigate("/line");
-        maybeCloseSidebar();
-      } else if (transcript.includes("faq")) {
-        navigate("/faq");
-        maybeCloseSidebar();
-      } else if (transcript.includes("calendar")) {
-        navigate("/calendar");
-        maybeCloseSidebar();
-      } else if (transcript.includes("geography")) {
-        navigate("/geography");
-        maybeCloseSidebar();
-      } else if (transcript.includes("open menu") || transcript.includes("show menu")) {
-        setIsSidebar(true);
-      } else if (transcript.includes("close menu") || transcript.includes("hide menu")) {
-        setIsSidebar(false);
-      } else {
-        console.log("Unrecognized voice command:", transcript);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error("Speech recognition error:", event.error);
-    };
-
-    recognition.start();
-
-    return () => {
-      recognition.stop();
-    };
-  }, [navigate]);
-
-  // Helper: close sidebar on mobile if open
-  const maybeCloseSidebar = () => {
-    if (window.innerWidth <= 768) {
-      setIsSidebar(false);
-    }
-  };
+    document.querySelector(".app").setAttribute("data-theme", theme.palette.mode);
+  }, [theme.palette.mode]);
 
   return (
     <ColorModeContext.Provider value={colorMode}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <div className="app">
-          <Sidebar isSidebar={isSidebar} />
-          <main className="content">
-            <Topbar setIsSidebar={setIsSidebar} />
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/contacts" element={<Contacts />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/form" element={<Form />} />
-              <Route path="/bar" element={<Bar />} />
-              <Route path="/pie" element={<Pie />} />
-              <Route path="/line" element={<Line />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/calendar" element={<Calendar />} />
-              <Route path="/geography" element={<Geography />} />
-            </Routes>
-          </main>
+        <div className="app" style={{ display: "flex", position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
+          <Box sx={{ position: "fixed", top: 0, left: 0, height: "100vh", zIndex: 1200 }}>
+            <Sidebar 
+              isSidebar={isSidebar} 
+              isCollapsed={isSidebarCollapsed}
+              setIsCollapsed={setIsSidebarCollapsed}
+            />
+          </Box>
+          <Box
+            component={motion.main}
+            initial={{ opacity: 0 }}
+            animate={{ 
+              opacity: 1,
+              marginLeft: isSidebarCollapsed ? "80px" : "280px",
+              transition: { duration: 0.4, ease: "easeInOut" }
+            }}
+            transition={{ duration: 0.5 }}
+            className="content"
+            sx={{
+              transition: "margin-left 0.4s ease-in-out",
+              width: `calc(100% - ${isSidebarCollapsed ? '80px' : '280px'})`,
+              position: "absolute",
+              left: 0,
+              top: 0,
+              right: 0,
+              bottom: 0
+            }}
+          >
+            <Topbar setIsSidebar={setIsSidebar} toggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)} />
+            <Box sx={{ padding: "20px", marginTop: "70px", height: "calc(100vh - 70px)", overflowY: "auto" }}>
+              <AnimatePresence mode="wait">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/team" element={<Team />} />
+                  <Route path="/bar" element={<Bar />} />
+                  <Route path="/faq" element={<FAQ />} />
+                  {/* New routes for enhanced sidebar */}
+                  <Route path="/analytics" element={<Dashboard />} />
+                  <Route path="/transactions" element={<Dashboard />} />
+                  <Route path="/reports" element={<Dashboard />} />
+                  <Route path="/alerts" element={<Dashboard />} />
+                  <Route path="/settings" element={<Dashboard />} />
+                </Routes>
+              </AnimatePresence>
+            </Box>
+          </Box>
         </div>
       </ThemeProvider>
     </ColorModeContext.Provider>

@@ -1,35 +1,47 @@
 import { useTheme } from "@mui/material";
 import { ResponsiveBar } from "@nivo/bar";
 import { tokens } from "../theme";
-import { mockBarData as data } from "../data/mockData";
 
-const BarChart = ({ isDashboard = false }) => {
+const BarChart = ({ isDashboard = false, data }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
 
+  // Use provided data or fallback to default data
+  const chartData = data ? [
+    {
+      country: "Transaction Types",
+      Normal: data.values ? data.values[0] : 0,
+      NormalColor: colors.greenAccent[500],
+      Suspicious: data.values ? data.values[1] : 0,
+      SuspiciousColor: colors.orangeAccent ? colors.orangeAccent[500] : "#FF9800",
+      Fraud: data.values ? data.values[2] : 0,
+      FraudColor: colors.redAccent[500],
+    }
+  ] : [
+    {
+      country: "Transaction Types",
+      Normal: 137,
+      NormalColor: colors.greenAccent[500],
+      Suspicious: 96,
+      SuspiciousColor: colors.orangeAccent ? colors.orangeAccent[500] : "#FF9800",
+      Fraud: 72,
+      FraudColor: colors.redAccent[500],
+    }
+  ];
+
   return (
     <ResponsiveBar
-      data={data}
-      keys={["Legitimate", "Fraudulent", "Suspicious"]}
-      indexBy="transaction_type"
-      margin={{ top: 50, right: 130, bottom: 70, left: 80 }}
-      padding={0.35}
-      innerPadding={4}
-      groupMode="grouped"
-      valueScale={{ type: "linear" }}
-      indexScale={{ type: "band", round: true }}
-      colors={({ id }) =>
-        id === "Fraudulent"
-          ? "#e53935"
-          : id === "Suspicious"
-          ? "#fdd835"
-          : "#43a047"
-      }
+      data={chartData}
       theme={{
         axis: {
           domain: {
             line: {
               stroke: colors.grey[100],
+            },
+          },
+          legend: {
+            text: {
+              fill: colors.grey[100],
             },
           },
           ticks: {
@@ -39,49 +51,57 @@ const BarChart = ({ isDashboard = false }) => {
             },
             text: {
               fill: colors.grey[100],
-              fontSize: 12,
-              fontWeight: 500,
             },
           },
         },
         legends: {
           text: {
             fill: colors.grey[100],
-            fontSize: 13,
           },
         },
         tooltip: {
           container: {
-            background: "#2d2d3a",
-            color: "#fff",
-            fontSize: 14,
-            borderRadius: "8px",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.4)",
-            padding: "10px 14px",
+            background: colors.primary[400],
+            color: colors.grey[100],
           },
         },
       }}
-      borderRadius={4}
-      borderColor={{ from: "color", modifiers: [["darker", 1.2]] }}
+      keys={["Normal", "Suspicious", "Fraud"]}
+      indexBy="country"
+      margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
+      padding={0.3}
+      valueScale={{ type: "linear" }}
+      indexScale={{ type: "band", round: true }}
+      colors={({ id, data }) => data[`${id}Color`]}
+      borderColor={{
+        from: "color",
+        modifiers: [["darker", 1.6]],
+      }}
       axisTop={null}
       axisRight={null}
       axisBottom={{
-        tickRotation: 0,
+        tickSize: 5,
         tickPadding: 5,
-        legend: isDashboard ? undefined : "Transaction Type",
+        tickRotation: 0,
+        legend: isDashboard ? undefined : "Transaction Types",
         legendPosition: "middle",
-        legendOffset: 48,
+        legendOffset: 32,
       }}
       axisLeft={{
+        tickSize: 5,
         tickPadding: 5,
-        legend: isDashboard ? undefined : "Number of Transactions",
+        tickRotation: 0,
+        legend: isDashboard ? undefined : "Count",
         legendPosition: "middle",
-        legendOffset: -60,
+        legendOffset: -40,
       }}
       enableLabel={false}
       labelSkipWidth={12}
       labelSkipHeight={12}
-      labelTextColor={{ from: "color", modifiers: [["darker", 1.6]] }}
+      labelTextColor={{
+        from: "color",
+        modifiers: [["darker", 1.6]],
+      }}
       legends={[
         {
           dataFrom: "keys",
@@ -89,27 +109,28 @@ const BarChart = ({ isDashboard = false }) => {
           direction: "column",
           justify: false,
           translateX: 120,
+          translateY: 0,
+          itemsSpacing: 2,
           itemWidth: 100,
-          itemHeight: 22,
+          itemHeight: 20,
           itemDirection: "left-to-right",
-          symbolSize: 18,
-          symbolShape: "circle",
-          itemTextColor: colors.grey[100],
+          itemOpacity: 0.85,
+          symbolSize: 20,
           effects: [
             {
               on: "hover",
               style: {
-                itemTextColor: "#fff",
+                itemOpacity: 1,
               },
             },
           ],
         },
       ]}
-      motionConfig="wobbly"
       role="application"
-      barAriaLabel={(e) =>
-        `${e.id} transactions: ${e.formattedValue} in ${e.indexValue}`
-      }
+      ariaLabel="Fraud Transaction Bar Chart"
+      barAriaLabel={function (e) {
+        return e.id + ": " + e.formattedValue + " in country: " + e.indexValue;
+      }}
     />
   );
 };

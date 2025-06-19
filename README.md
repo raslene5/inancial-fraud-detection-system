@@ -1,70 +1,158 @@
-# Getting Started with Create React App
+# Financial Fraud Detection System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive system for detecting and analyzing fraudulent financial transactions using machine learning models.
 
-## Available Scripts
+## System Architecture
 
-In the project directory, you can run:
+The system consists of two main components:
 
-### `npm start`
+1. **Frontend**: React-based UI for transaction submission, visualization, and analysis
+2. **Backend**: Spring Boot Java application with Python ML integration
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Prerequisites
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- Node.js 14+ and npm
+- Java 11+
+- Maven
+- Python 3.7+
+- Required Python packages: numpy, joblib, scikit-learn
 
-### `npm test`
+## Setup Instructions
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### Backend Setup
 
-### `npm run build`
+1. Navigate to the backend directory:
+   ```
+   cd FFDS-backend-tasks
+   ```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+2. Install Python dependencies:
+   ```
+   pip install numpy joblib scikit-learn
+   ```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+3. Build and run the Spring Boot application:
+   ```
+   mvn spring-boot:run
+   ```
+   The backend will start on port 8089.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### Frontend Setup
 
-### `npm run eject`
+1. Navigate to the frontend directory:
+   ```
+   cd FFDS-
+   ```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. Install dependencies:
+   ```
+   npm install
+   ```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. Start the development server:
+   ```
+   npm start
+   ```
+   The frontend will start on port 3000.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## Testing the System
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Integration Tests
 
-## Learn More
+Run the integration test script to verify that all components are working together:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```
+cd FFDS-
+node integration_test.js
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+This will test:
+- Backend health endpoint
+- Fraud detection API with various test cases
 
-### Code Splitting
+### Manual Testing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. Start both the backend and frontend using the provided `start_system.bat` script
+2. Open the frontend in your browser at http://localhost:3000
+3. Use the transaction form to submit test transactions
+4. Verify that the results are displayed correctly
 
-### Analyzing the Bundle Size
+## System Components
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Frontend Components
 
-### Making a Progressive Web App
+- **Dashboard**: Main overview with statistics and charts
+- **TransactionForm**: Form for submitting transactions for analysis
+- **FraudChart**: Visualization of fraud statistics
+- **RecentFraudList**: List of recent fraudulent transactions
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Backend Components
 
-### Advanced Configuration
+- **FraudDetectionController**: REST API endpoint for fraud detection
+- **HealthCheckController**: Endpoint for system health monitoring
+- **PythonInvoker**: Service for invoking the Python ML model
+- **predict.py**: Python script containing the ML model for fraud detection
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## API Documentation
 
-### Deployment
+### Health Check API
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+**Endpoint**: `GET /api/health`
 
-### `npm run build` fails to minify
+**Response**:
+```json
+{
+  "status": "UP",
+  "timestamp": "2023-05-15T10:30:00",
+  "service": "Fraud Detection API",
+  "version": "1.0.0"
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### Fraud Detection API
+
+**Endpoint**: `POST /api/fraud-detect`
+
+**Request Body**:
+```json
+{
+  "amount": 1000,
+  "day": 15,
+  "type": "PAYMENT",
+  "transaction_pair_code": "cc",
+  "part_of_the_day": "morning"
+}
+```
+
+**Response**:
+```json
+{
+  "isFraud": false,
+  "probability": 0.15,
+  "status": "normal",
+  "riskScore": 15,
+  "transactionId": "TX12345678",
+  "timestamp": "2023-05-15T10:30:00",
+  "amount": 1000,
+  "type": "PAYMENT",
+  "day": 15,
+  "transaction_pair_code": "cc",
+  "part_of_the_day": "morning",
+  "factors": []
+}
+```
+
+## Error Handling
+
+The system includes comprehensive error handling:
+
+1. **Backend Errors**: Detailed error messages with stack traces
+2. **API Communication Errors**: Fallback responses when the API is unavailable
+3. **Frontend Error Display**: User-friendly error messages and status indicators
+
+## Troubleshooting
+
+- **Backend not starting**: Check Java and Python installations
+- **API connection issues**: Verify the backend is running on port 8089
+- **Model loading errors**: Ensure all required Python packages are installed
+- **Frontend display issues**: Check browser console for JavaScript errors
