@@ -1,0 +1,7 @@
+{
+    "amount": 50000.0,
+    "day": 3,
+    "type": "CASH_OUT",
+    "transaction_pair_code": "cm",
+    "part_of_the_day": "night"
+}
