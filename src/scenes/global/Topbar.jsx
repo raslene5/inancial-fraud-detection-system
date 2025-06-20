@@ -24,6 +24,7 @@ import {
   MenuList,
   Stack
 } from "@mui/material";
+import notificationService from "../../NotificationService";
 import { useContext, useState, useRef, useEffect } from "react";
 import { ColorModeContext, tokens } from "../../theme";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -50,10 +51,13 @@ const Topbar = ({ setIsSidebar, toggleSidebar }) => {
   const theme = useTheme();
   const colors = tokens(theme.palette.mode);
   const colorMode = useContext(ColorModeContext);
+  
   // State management
   const [anchorEl, setAnchorEl] = useState(null);
   const [notificationAnchorEl, setNotificationAnchorEl] = useState(null);
   const [quickActions, setQuickActions] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   // Menu states
   const open = Boolean(anchorEl);
@@ -68,33 +72,19 @@ const Topbar = ({ setIsSidebar, toggleSidebar }) => {
   // Quick actions toggle
   const toggleQuickActions = () => setQuickActions(!quickActions);
 
-  // Mock notifications
-  const notifications = [
-    {
-      id: 1,
-      title: "High Risk Alert",
-      description: "New high-risk transaction detected",
-      time: "5 min ago",
-      type: "alert",
-      unread: true
-    },
-    {
-      id: 2,
-      title: "Case Update",
-      description: "Case #FR-2023-0472 has been updated",
-      time: "1 hour ago",
-      type: "update",
-      unread: true
-    },
-    {
-      id: 3,
-      title: "System Notification",
-      description: "AI model training completed",
-      time: "3 hours ago",
-      type: "system",
-      unread: false
-    }
-  ];
+  // Subscribe to notification service
+  useEffect(() => {
+    const unsubscribe = notificationService.subscribe(({ notifications: newNotifications, unreadCount: newUnreadCount }) => {
+      setNotifications(newNotifications);
+      setUnreadCount(newUnreadCount);
+    });
+
+    // Initialize with current notifications
+    setNotifications(notificationService.getNotifications());
+    setUnreadCount(notificationService.getUnreadCount());
+
+    return unsubscribe;
+  }, []);
 
   // Get notification type color
   const getNotificationColor = (type) => {
@@ -110,8 +100,12 @@ const Topbar = ({ setIsSidebar, toggleSidebar }) => {
     }
   };
 
-  // Count unread notifications
-  const unreadCount = notifications.filter(n => n.unread).length;
+  // Clear all notifications
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    setUnreadCount(0);
+    handleNotificationsClose();
+  };
 
   return (
     <Box
@@ -741,7 +735,7 @@ const Topbar = ({ setIsSidebar, toggleSidebar }) => {
           ))}
           
           <Divider />
-          <Box sx={{ p: 1, display: "flex", justifyContent: "center" }}>
+          <Box sx={{ p: 1, display: "flex", justifyContent: "space-between" }}>
             <Button 
               size="small" 
               sx={{ 
@@ -753,6 +747,19 @@ const Topbar = ({ setIsSidebar, toggleSidebar }) => {
               }}
             >
               View all notifications
+            </Button>
+            <Button 
+              size="small" 
+              onClick={clearAllNotifications}
+              sx={{ 
+                textTransform: "none", 
+                color: colors.redAccent[500],
+                "&:hover": {
+                  backgroundColor: alpha(colors.redAccent[500], 0.1)
+                }
+              }}
+            >
+              Clear all
             </Button>
           </Box>
         </Menu>

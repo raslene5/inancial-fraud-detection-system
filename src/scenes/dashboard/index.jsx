@@ -37,6 +37,7 @@ import TransactionFormHorizontal from "../../components/TransactionFormHorizonta
 import RecentFraudList from "../../components/RecentFraudList";
 import FraudChart from "../../components/FraudChart";
 import AnimatedBox from "../../components/AnimatedBox";
+import SystemStatus from "../../components/SystemStatus";
 import { getFraudHistory, getFraudStatistics, generateFraudReport } from "../../FraudService";
 
 const Dashboard = () => {
@@ -99,7 +100,11 @@ const Dashboard = () => {
       (acc, item) => {
         if (item.status === "fraud") {
           acc.fraudCount++;
-          acc.fraudAmount += parseFloat(item.amount || 0);
+          // Parse amount properly - remove currency symbols and convert to number
+          const amount = typeof item.amount === 'string' 
+            ? parseFloat(item.amount.replace(/[^0-9.-]/g, '')) 
+            : parseFloat(item.amount || 0);
+          acc.fraudAmount += isNaN(amount) ? 0 : amount;
           if (!acc.mostRecentFraud || new Date(item.timestamp) > new Date(acc.mostRecentFraud.timestamp)) {
             acc.mostRecentFraud = item;
           }
@@ -741,30 +746,12 @@ const Dashboard = () => {
               </IconButton>
             </Tooltip>
             
-            <Tooltip title="Search">
-              <IconButton 
-                onClick={() => setSearchDialogOpen(true)}
-                sx={{
-                  bgcolor: alpha(colors.grey[100], 0.1),
-                  backdropFilter: "blur(10px)",
-                  border: `1px solid ${alpha(colors.grey[100], 0.1)}`,
-                  boxShadow: `0 4px 10px ${alpha(colors.primary[900], 0.2)}`,
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    bgcolor: alpha(colors.grey[100], 0.15),
-                    transform: "translateY(-2px)",
-                    boxShadow: `0 6px 15px ${alpha(colors.primary[900], 0.3)}`,
-                  }
-                }}
-              >
-                <SearchIcon />
-              </IconButton>
-            </Tooltip>
+
             
             <Button
               variant="contained"
               startIcon={<LightbulbOutlinedIcon />}
-              onClick={() => setInsightDialogOpen(true)}
+              disabled={true}
               sx={{
                 background: (theme) => {
                   // Calculate color based on risk factors

@@ -24,10 +24,18 @@ export const checkApiHealth = async () => {
 export const predictFraud = async (data) => {
   try {
     console.log("Sending fraud detection request:", data);
+    
+    // First check if backend is available
+    const healthCheck = await checkApiHealth();
+    if (healthCheck.status !== "UP") {
+      throw new Error("Backend service is not available");
+    }
+    
     const response = await fetch("http://localhost:8089/api/fraud-detect", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
       },
       body: JSON.stringify(data)
     });
@@ -84,13 +92,35 @@ export const saveFraudTransaction = (transaction) => {
     fraudHistory.unshift(transaction);
     localStorage.setItem("fraudHistory", JSON.stringify(fraudHistory.slice(0, 100))); // Keep last 100 entries
     
-    // Dispatch event to notify components
-    const event = new Event("fraudDetected");
+    // Dispatch event to notify components with transaction details
+    const event = new CustomEvent("fraudDetected", { 
+      detail: transaction 
+    });
     window.dispatchEvent(event);
     
     return true;
   } catch (error) {
     console.error("Error saving to fraud history:", error);
+    return false;
+  }
+};
+
+// Save any transaction (including normal ones) and dispatch event
+export const saveTransaction = (transaction) => {
+  try {
+    const allTransactions = JSON.parse(localStorage.getItem("allTransactions") || "[]");
+    allTransactions.unshift(transaction);
+    localStorage.setItem("allTransactions", JSON.stringify(allTransactions.slice(0, 200))); // Keep last 200 entries
+    
+    // Dispatch event for all transactions
+    const event = new CustomEvent("transactionProcessed", { 
+      detail: transaction 
+    });
+    window.dispatchEvent(event);
+    
+    return true;
+  } catch (error) {
+    console.error("Error saving transaction:", error);
     return false;
   }
 };

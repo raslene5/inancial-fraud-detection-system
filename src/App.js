@@ -4,7 +4,7 @@ import Topbar from "./scenes/global/Topbar";
 import Sidebar from "./scenes/global/Sidebar";
 import Dashboard from "./scenes/dashboard";
 import Team from "./scenes/fraud history";
-import Bar from "./scenes/bar";
+
 import FAQ from "./scenes/faq";
 import { CssBaseline, ThemeProvider, Box } from "@mui/material";
 import { ColorModeContext, useMode } from "./theme";
@@ -58,7 +58,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<Dashboard />} />
                   <Route path="/team" element={<Team />} />
-                  <Route path="/bar" element={<Bar />} />
+
                   <Route path="/faq" element={<FAQ />} />
                   {/* New routes for enhanced sidebar */}
                   <Route path="/analytics" element={<Dashboard />} />
