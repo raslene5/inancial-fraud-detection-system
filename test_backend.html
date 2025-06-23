@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend API Test</title>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    <button onclick="testDashboardAPI()">Test Dashboard API</button>
+    <button onclick="testHealthAPI()">Test Health API</button>
+    <div id="results"></div>
+
+    <script>
+        async function testHealthAPI() {
+            try {
+                const response = await fetch('http://localhost:8089/api/health');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<h3>Health API Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = '<h3>Health API Error:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+
+        async function testDashboardAPI() {
+            try {
+                const response = await fetch('http://localhost:8089/api/dashboard');
+                const data = await response.json();
+                document.getElementById('results').innerHTML = '<h3>Dashboard API Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('results').innerHTML = '<h3>Dashboard API Error:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>

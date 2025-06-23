@@ -38,7 +38,7 @@ import RecentFraudList from "../../components/RecentFraudList";
 import FraudChart from "../../components/FraudChart";
 import AnimatedBox from "../../components/AnimatedBox";
 import SystemStatus from "../../components/SystemStatus";
-import { getFraudHistory, getFraudStatistics, generateFraudReport } from "../../FraudService";
+import { getFraudHistory, getFraudStatistics, generateFraudReport, getDashboardData, clearLocalData, addSampleFraudData } from "../../FraudService";
 
 const Dashboard = () => {
   const theme = useTheme();
@@ -92,51 +92,105 @@ const Dashboard = () => {
   const [recentFraudTransaction, setRecentFraudTransaction] = useState(null);
 
   // Load fraud statistics
-  const loadFraudStatistics = useCallback(() => {
+  const loadFraudStatistics = useCallback(async () => {
+    try {
+      // Try to get data from backend first
+      const backendData = await getDashboardData();
+      
+      if (backendData) {
+        // Use backend data if available
+        console.log("Backend data received:", backendData);
+        console.log("Fraud amount from backend:", backendData.fraudAmount);
+        setFraudStats({
+          totalTransactions: backendData.totalTransactions || 0,
+          fraudCount: backendData.fraudCount || 0,
+          suspiciousCount: backendData.suspiciousCount || 0,
+          fraudAmount: backendData.fraudAmount || 0
+        });
+      } else {
+        // Fallback to local storage data
+        const fraudHistory = getFraudHistory();
+        
+        const { fraudCount, suspiciousCount, fraudAmount, mostRecentFraud } = fraudHistory.reduce(
+          (acc, item) => {
+            if (item.status === "fraud") {
+              acc.fraudCount++;
+              // Parse amount properly - remove currency symbols and convert to number
+              const amount = typeof item.amount === 'string' 
+                ? parseFloat(item.amount.replace(/[^0-9.-]/g, '')) 
+                : parseFloat(item.amount || 0);
+              console.log(`Processing fraud transaction: ${item.transactionId}, amount: ${item.amount}, parsed: ${amount}`);
+              acc.fraudAmount += isNaN(amount) ? 0 : amount;
+              if (!acc.mostRecentFraud || new Date(item.timestamp) > new Date(acc.mostRecentFraud.timestamp)) {
+                acc.mostRecentFraud = item;
+              }
+            } else if (item.status === "suspicious") {
+              acc.suspiciousCount++;
+            }
+            return acc;
+          },
+          { fraudCount: 0, suspiciousCount: 0, fraudAmount: 0, mostRecentFraud: null }
+        );
+        
+        console.log(`Final fraud stats - Count: ${fraudCount}, Amount: ${fraudAmount}`);
+        setFraudStats({
+          totalTransactions: fraudHistory.length,
+          fraudCount,
+          suspiciousCount,
+          fraudAmount
+        });
+      }
+    } catch (error) {
+      console.error("Error loading fraud statistics:", error);
+      // Fallback to local storage on error
+      const fraudHistory = getFraudHistory();
+      const stats = getFraudStatistics();
+      
+      const { fraudCount, suspiciousCount, fraudAmount, mostRecentFraud } = fraudHistory.reduce(
+        (acc, item) => {
+          if (item.status === "fraud") {
+            acc.fraudCount++;
+            const amount = typeof item.amount === 'string' 
+              ? parseFloat(item.amount.replace(/[^0-9.-]/g, '')) 
+              : parseFloat(item.amount || 0);
+            acc.fraudAmount += isNaN(amount) ? 0 : amount;
+            if (!acc.mostRecentFraud || new Date(item.timestamp) > new Date(acc.mostRecentFraud.timestamp)) {
+              acc.mostRecentFraud = item;
+            }
+          } else if (item.status === "suspicious") {
+            acc.suspiciousCount++;
+          }
+          return acc;
+        },
+        { fraudCount: 0, suspiciousCount: 0, fraudAmount: 0, mostRecentFraud: null }
+      );
+      
+      setFraudStats({
+        totalTransactions: fraudHistory.length,
+        fraudCount,
+        suspiciousCount,
+        fraudAmount
+      });
+    }
+    
+    // Get chart data from local storage for now
     const fraudHistory = getFraudHistory();
     const stats = getFraudStatistics();
     
-    const { fraudCount, suspiciousCount, fraudAmount, mostRecentFraud } = fraudHistory.reduce(
-      (acc, item) => {
-        if (item.status === "fraud") {
-          acc.fraudCount++;
-          // Parse amount properly - remove currency symbols and convert to number
-          const amount = typeof item.amount === 'string' 
-            ? parseFloat(item.amount.replace(/[^0-9.-]/g, '')) 
-            : parseFloat(item.amount || 0);
-          acc.fraudAmount += isNaN(amount) ? 0 : amount;
-          if (!acc.mostRecentFraud || new Date(item.timestamp) > new Date(acc.mostRecentFraud.timestamp)) {
-            acc.mostRecentFraud = item;
-          }
-        } else if (item.status === "suspicious") {
-          acc.suspiciousCount++;
-        }
-        return acc;
-      },
-      { fraudCount: 0, suspiciousCount: 0, fraudAmount: 0, mostRecentFraud: null }
-    );
-    
-    setFraudStats({
-      totalTransactions: fraudHistory.length,
-      fraudCount,
-      suspiciousCount,
-      fraudAmount
-    });
-    
     // Always update the status data to ensure chart reflects current state
-    const normalCount = fraudHistory.length - fraudCount - suspiciousCount;
+    const normalCount = fraudHistory.length - (fraudStats.fraudCount || 0) - (fraudStats.suspiciousCount || 0);
     
-    // Always use sample timeline data for now to ensure it works
-    const sampleTimelineData = generateSampleTimelineData();
+    // Use real timeline data from fraud history
+    const realTimelineData = generateTimelineFromHistory(fraudHistory);
     
     // Create updated stats object
     const updatedStats = {
       ...stats,
       statusData: {
         labels: ["Normal", "Suspicious", "Fraud"],
-        values: [normalCount, suspiciousCount, fraudCount]
+        values: [normalCount, fraudStats.suspiciousCount || 0, fraudStats.fraudCount || 0]
       },
-      timelineData: sampleTimelineData
+      timelineData: realTimelineData
     };
     
     console.log("Updated chart data:", updatedStats);
@@ -144,57 +198,51 @@ const Dashboard = () => {
     // Update chart data with the latest values
     setChartData(updatedStats);
     
+    // Get most recent fraud from local storage for display
+    const mostRecentFraud = fraudHistory.find(item => item.status === "fraud");
     if (mostRecentFraud) {
       setRecentFraudTransaction(mostRecentFraud);
     }
-  }, []);
+  }, [fraudStats]);
   
-  // Generate sample timeline data if needed
-  const generateSampleTimelineData = () => {
-    console.log("Generating sample timeline data");
+  // Generate timeline data from actual fraud history
+  const generateTimelineFromHistory = (fraudHistory) => {
     const today = new Date();
-    const timelineLabels = [];
-    const fraudValues = [5, 3, 7, 4, 6, 2, 8]; // Fixed values for consistency
-    const suspiciousValues = [8, 6, 9, 7, 10, 5, 12]; // Fixed values for consistency
+    const dayData = {};
     
+    // Initialize last 7 days with zero values
     for (let i = 6; i >= 0; i--) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
-      
       const dayKey = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
-      timelineLabels.push(dayKey);
+      dayData[dayKey] = { fraud: 0, suspicious: 0 };
     }
     
-    const result = {
-      labels: timelineLabels,
-      values: fraudValues,
-      secondaryValues: suspiciousValues
-    };
+    // Count actual transactions by day
+    fraudHistory.forEach(transaction => {
+      const date = new Date(transaction.timestamp);
+      const dayKey = `${date.getFullYear()}-${date.getMonth()+1}-${date.getDate()}`;
+      
+      if (dayData[dayKey]) {
+        if (transaction.status === "fraud") {
+          dayData[dayKey].fraud++;
+        } else if (transaction.status === "suspicious") {
+          dayData[dayKey].suspicious++;
+        }
+      }
+    });
     
-    console.log("Sample timeline data:", result);
-    return result;
+    const sortedDays = Object.keys(dayData).sort();
+    return {
+      labels: sortedDays,
+      values: sortedDays.map(day => dayData[day].fraud),
+      secondaryValues: sortedDays.map(day => dayData[day].suspicious)
+    };
   };
 
   useEffect(() => {
     loadFraudStatistics();
-    
-    const handleFraudDetected = () => {
-      if (!loading) {
-        loadFraudStatistics();
-        
-        // Force chart update
-        setChartData(prevData => ({ ...prevData }));
-      }
-    };
-    
-    window.addEventListener("fraudDetected", handleFraudDetected);
-    window.addEventListener("transactionProcessed", handleFraudDetected);
-    
-    return () => {
-      window.removeEventListener("fraudDetected", handleFraudDetected);
-      window.removeEventListener("transactionProcessed", handleFraudDetected);
-    };
-  }, [loading, loadFraudStatistics]);
+  }, []);
 
   // Core handlers
   const showAlert = useCallback((message, severity = "info") => {
@@ -253,23 +301,17 @@ const Dashboard = () => {
         break;
     }
     
-    // Force a re-render of the chart by updating chart data
-    setChartData(prevData => {
-      // Create a shallow copy to trigger re-render
-      return { ...prevData };
-    });
+    // Minimal chart update
+    if (result.status === "fraud" || result.status === "suspicious") {
+      setTimeout(() => loadFraudStatistics(), 1000);
+    }
   }, [showAlert, loadFraudStatistics]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
     loadFraudStatistics();
-    
-    // Add a slight delay to show the refresh animation
-    setTimeout(() => {
-      setRefreshing(false);
-      showAlert("Dashboard data refreshed", "success");
-    }, 800);
-  }, [loadFraudStatistics, showAlert]);
+    setTimeout(() => setRefreshing(false), 500);
+  }, [loadFraudStatistics]);
   
   const handleDownloadReport = useCallback(async () => {
     if (loading) return;
@@ -850,6 +892,25 @@ const Dashboard = () => {
             >
               {loading ? "Generating..." : "Export Report"}
             </Button>
+            
+            <Button
+              variant="outlined"
+              onClick={() => {
+                addSampleFraudData();
+                loadFraudStatistics();
+                showAlert("Sample fraud data added and refreshed", "success");
+              }}
+              sx={{
+                borderColor: alpha(colors.orangeAccent[500], 0.5),
+                color: colors.orangeAccent[500],
+                "&:hover": {
+                  borderColor: colors.orangeAccent[500],
+                  backgroundColor: alpha(colors.orangeAccent[500], 0.1)
+                }
+              }}
+            >
+              Add Test Data
+            </Button>
           </Box>
         </Box>
         
@@ -974,7 +1035,7 @@ const Dashboard = () => {
                   >
                     {renderStatCard(
                       "Fraud Amount",
-                      `${fraudStats.fraudAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                      `$${fraudStats.fraudAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
                       colors.redAccent[400],
                       "Total value of fraud transactions",
                       0.3

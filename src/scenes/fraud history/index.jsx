@@ -138,9 +138,18 @@ const FraudHistory = () => {
       return; // Don't export if no data
     }
     
-    const headers = Object.keys(fraudData[0]).join(',');
-    const rows = fraudData.map(item => Object.values(item).join(',')).join('\n');
-    const csvContent = `${headers}\n${rows}`;
+    // Export only the columns that are visible in the table
+    const headers = ['Transaction ID', 'Date & Time', 'Amount', 'Fraud Type', 'Risk Score', 'Status'];
+    const rows = fraudData.map(item => [
+      item.id,
+      new Date(item.timestamp).toLocaleString(),
+      parseInt(item.amount),
+      item.fraudType,
+      Math.round(item.fraudScore * 100) + '%',
+      item.status
+    ].join(','));
+    
+    const csvContent = `${headers.join(',')}\n${rows.join('\n')}`;
     
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);

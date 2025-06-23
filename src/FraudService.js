@@ -1,3 +1,29 @@
+// Get dashboard data from backend API
+export const getDashboardData = async () => {
+  try {
+    console.log("Attempting to fetch dashboard data from backend...");
+    const response = await fetch("http://localhost:8089/api/dashboard", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`Backend API returned error: ${response.status} ${response.statusText}`);
+      throw new Error(`HTTP error: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    console.log("Dashboard data received from backend:", result);
+    return result;
+  } catch (error) {
+    console.error("Failed to fetch dashboard data from backend:", error.message);
+    console.log("Falling back to local storage data");
+    return null;
+  }
+};
+
 // Check API health
 export const checkApiHealth = async () => {
   try {
@@ -132,6 +158,74 @@ export const getFraudHistory = () => {
   } catch (error) {
     console.error("Error loading fraud history:", error);
     return [];
+  }
+};
+
+// Clear all local storage data (for testing)
+export const clearLocalData = () => {
+  try {
+    localStorage.removeItem("fraudHistory");
+    localStorage.removeItem("allTransactions");
+    console.log("Local storage cleared");
+    return true;
+  } catch (error) {
+    console.error("Error clearing local storage:", error);
+    return false;
+  }
+};
+
+// Add sample fraud data for testing
+export const addSampleFraudData = () => {
+  try {
+    const sampleTransactions = [
+      {
+        transactionId: "TXN001",
+        amount: "1500.00",
+        type: "TRANSFER",
+        status: "normal",
+        riskScore: 25,
+        timestamp: new Date().toISOString()
+      },
+      {
+        transactionId: "TXN002",
+        amount: "50000.00",
+        type: "CASH_OUT",
+        status: "suspicious",
+        riskScore: 85,
+        timestamp: new Date().toISOString()
+      },
+      {
+        transactionId: "TXN003",
+        amount: "100.00",
+        type: "PAYMENT",
+        status: "fraud",
+        riskScore: 95,
+        timestamp: new Date().toISOString()
+      },
+      {
+        transactionId: "TXN004",
+        amount: "2500.00",
+        type: "TRANSFER",
+        status: "normal",
+        riskScore: 30,
+        timestamp: new Date().toISOString()
+      },
+      {
+        transactionId: "TXN005",
+        amount: "75000.00",
+        type: "CASH_OUT",
+        status: "fraud",
+        riskScore: 92,
+        timestamp: new Date().toISOString()
+      }
+    ];
+    
+    localStorage.setItem("fraudHistory", JSON.stringify(sampleTransactions));
+    console.log("Sample fraud data added");
+    return true;
+  } catch (error) {
+    console.error("Error adding sample data:", error);
+    return false;
   }
 };
 

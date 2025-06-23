@@ -30,6 +30,7 @@ import {
 } from "@mui/material";
 import { tokens } from "../theme";
 import WarningIcon from "@mui/icons-material/Warning";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
 import SecurityIcon from "@mui/icons-material/Security";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -282,7 +283,7 @@ const RecentFraudList = ({ onViewDetails, maxItems = 5 }) => {
                 animate={animateAlert ? "pulse" : ""}
                 variants={pulseVariants}
               >
-                <WarningIcon />
+                <AnalyticsIcon />
               </motion.div>
             </Avatar>
           </motion.div>
@@ -317,7 +318,7 @@ const RecentFraudList = ({ onViewDetails, maxItems = 5 }) => {
                   }
                 }}
               >
-                Recent Fraud Alerts
+                Recent Analysed Transactions
               </Badge>
             </Typography>
             <Typography 
@@ -816,7 +817,7 @@ const RecentFraudList = ({ onViewDetails, maxItems = 5 }) => {
                 fontSize: "0.95rem",
               }}
             >
-              View All Fraud Alerts ({fraudHistory.length})
+              View All Analysed Transactions ({fraudHistory.length})
             </Button>
           </motion.div>
           
